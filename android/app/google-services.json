@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "30164116362",
+    "project_id": "ispapp-9f09d",
+    "storage_bucket": "ispapp-9f09d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:30164116362:android:5e71a176eb33c8ca0b5e73",
+        "android_client_info": {
+          "package_name": "com.example.my_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxmXyQzc3PpvDTt6QYDkesZnzZFQG-m3s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
