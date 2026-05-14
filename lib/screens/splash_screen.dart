@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -110,7 +113,14 @@ class _SplashScreenState extends State<SplashScreen>
 
     await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
-    context.go('/login');
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final hasProfile = await AuthService().hasProfile(user.uid);
+      if (!mounted) return;
+      context.go(hasProfile ? '/home' : '/register-profile');
+    } else {
+      context.go('/language');
+    }
   }
 
   @override
