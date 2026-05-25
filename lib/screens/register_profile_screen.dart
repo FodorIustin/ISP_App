@@ -23,17 +23,23 @@ class _RegisterProfileScreenState extends State<RegisterProfileScreen> {
   bool _loading = false;
 
   static const _countries = [
-    ('🇬🇧', 'United Kingdom'),
-    ('🇷🇴', 'Romania'),
-    ('🇵🇱', 'Poland'),
-    ('🇩🇪', 'Germany'),
-    ('🇭🇺', 'Hungary'),
-    ('🇨🇿', 'Czech Republic'),
-    ('🇸🇰', 'Slovakia'),
+    ('🇦🇱', 'Albania'),
+    ('🇦🇲', 'Armenia'),
+    ('🇦🇹', 'Austria'),
+    ('🇧🇪', 'Belgium'),
     ('🇧🇬', 'Bulgaria'),
+    ('🇨🇿', 'Czech Republic'),
+    ('🇬🇷', 'Greece'),
+    ('🇭🇺', 'Hungary'),
+    ('🇲🇩', 'Moldova'),
+    ('🇳🇱', 'Netherlands'),
+    ('🇲🇰', 'North Macedonia'),
+    ('🇵🇱', 'Poland'),
+    ('🇵🇹', 'Portugal'),
+    ('🇷🇴', 'Romania'),
+    ('🇪🇸', 'Spain'),
     ('🇺🇦', 'Ukraine'),
     ('🇷🇺', 'Russia'),
-    ('🇪🇸', 'Spain'),
   ];
 
   @override

@@ -29,7 +29,14 @@ class _RegisterAuthScreenState extends State<RegisterAuthScreen> {
       final credential = await AuthService().signInWithGoogle();
       if (!mounted) return;
       if (credential != null) {
-        context.go('/register-profile');
+        final uid = credential.user!.uid;
+        final hasProfile = await AuthService().hasProfile(uid);
+        if (!mounted) return;
+        if (hasProfile) {
+          context.go('/home');
+        } else {
+          context.go('/register-profile');
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sign-in cancelled.')),

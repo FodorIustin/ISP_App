@@ -24,6 +24,13 @@ class _LanguageScreenState extends State<LanguageScreen> {
     ('Ukrainian', '🇺🇦'),
     ('Russian', '🇷🇺'),
     ('Spanish', '🇪🇸'),
+    ('Portuguese', '🇵🇹'),
+    ('Albanian', '🇦🇱'),
+    ('Armenian', '🇦🇲'),
+    ('Greek', '🇬🇷'),
+    ('Dutch', '🇳🇱'),
+    ('Macedonian', '🇲🇰'),
+    ('Moldovan (Romanian)', '🇲🇩'),
   ];
 
   Future<void> _onContinue() async {
