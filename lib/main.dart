@@ -6,12 +6,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
 import 'screens/access_code_screen.dart';
-import 'screens/home_screen.dart';
 import 'screens/language_screen.dart';
+import 'screens/lesson_detail_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_auth_screen.dart';
 import 'screens/register_profile_screen.dart';
 import 'screens/splash_screen.dart';
+import 'widgets/main_shell.dart';
 
 final _router = GoRouter(
   initialLocation: '/splash',
@@ -42,11 +43,17 @@ final _router = GoRouter(
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const HomeScreen(),
+      builder: (context, state) => const MainShell(),
     ),
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomeScreen(),
+      builder: (context, state) => const MainShell(),
+    ),
+    GoRoute(
+      path: '/lesson/:lessonId',
+      builder: (context, state) => LessonDetailScreen(
+        lessonId: state.pathParameters['lessonId']!,
+      ),
     ),
   ],
 );

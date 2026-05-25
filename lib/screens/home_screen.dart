@@ -1,8 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
-import '../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,8 +9,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _navIndex = 0;
-
   String get _displayName =>
       FirebaseAuth.instance.currentUser?.displayName ?? 'Friend';
 
@@ -33,10 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      bottomNavigationBar: _BottomNav(
-        currentIndex: _navIndex,
-        onTap: (i) => setState(() => _navIndex = i),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -94,39 +85,22 @@ class _Header extends StatelessWidget {
             ),
           ],
         ),
-        Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: const BoxDecoration(
-                color: Color(0xff003e6d),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+        Container(
+          width: 38,
+          height: 38,
+          decoration: const BoxDecoration(
+            color: Color(0xff003e6d),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
             ),
-            IconButton(
-              icon: const Icon(
-                Icons.logout,
-                color: Color(0xff888888),
-                size: 20,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () async {
-                await AuthService().signOut();
-                if (context.mounted) context.go('/language');
-              },
-            ),
-          ],
+          ),
         ),
       ],
     );
@@ -580,121 +554,5 @@ class _LessonRow extends StatelessWidget {
     }
 
     return card;
-  }
-}
-
-// ─── Bottom Nav ───────────────────────────────────────────────────────────────
-
-class _BottomNav extends StatelessWidget {
-  const _BottomNav({required this.currentIndex, required this.onTap});
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const active = Color(0xff003e6d);
-    const inactive = Color(0xffbbbbbb);
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xffeeeeee), width: 0.5),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 0),
-          child: Row(
-            children: [
-              _NavTab(
-                icon: Icons.home,
-                label: 'Home',
-                active: currentIndex == 0,
-                activeColor: active,
-                inactiveColor: inactive,
-                onTap: () => onTap(0),
-              ),
-              _NavTab(
-                icon: Icons.menu_book_outlined,
-                label: 'Lessons',
-                active: currentIndex == 1,
-                activeColor: active,
-                inactiveColor: inactive,
-                onTap: () => onTap(1),
-              ),
-              _NavTab(
-                icon: Icons.location_pin,
-                label: 'Live',
-                active: currentIndex == 2,
-                activeColor: active,
-                inactiveColor: inactive,
-                onTap: () => onTap(2),
-              ),
-              _NavTab(
-                icon: Icons.emoji_events_outlined,
-                label: 'Rankings',
-                active: currentIndex == 3,
-                activeColor: active,
-                inactiveColor: inactive,
-                onTap: () => onTap(3),
-              ),
-              _NavTab(
-                icon: Icons.person_outline,
-                label: 'Profile',
-                active: currentIndex == 4,
-                activeColor: active,
-                inactiveColor: inactive,
-                onTap: () => onTap(4),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavTab extends StatelessWidget {
-  const _NavTab({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.activeColor,
-    required this.inactiveColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool active;
-  final Color activeColor;
-  final Color inactiveColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? activeColor : inactiveColor;
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 8, 0, 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 20, color: color),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(fontSize: 9, color: color),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
