@@ -7,8 +7,15 @@ import 'package:flutter/material.dart';
 import '../models/app_user.dart';
 import '../services/user_service.dart';
 
-class LiveMapScreen extends StatelessWidget {
+class LiveMapScreen extends StatefulWidget {
   const LiveMapScreen({super.key});
+
+  @override
+  State<LiveMapScreen> createState() => _LiveMapScreenState();
+}
+
+class _LiveMapScreenState extends State<LiveMapScreen> {
+  String _filter = 'all';
 
   static const _positions = [
     (60.0, 50.0),
@@ -26,162 +33,189 @@ class LiveMapScreen extends StatelessWidget {
     return parts.isNotEmpty && parts.first.isNotEmpty ? parts.first : '?';
   }
 
+  List<AppUser> _applyFilter(List<AppUser> all) {
+    switch (_filter) {
+      case 'online':
+        return all.where((u) => u.isCurrentlyOnline).toList();
+      case 'offline':
+        return all.where((u) => !u.isCurrentlyOnline).toList();
+      default:
+        return all;
+    }
+  }
+
+  String _emptyMessage() {
+    switch (_filter) {
+      case 'online':
+        return 'No users online right now';
+      case 'offline':
+        return 'No offline users';
+      default:
+        return 'No attendees yet';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userService = UserService();
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 12),
-                _buildHeader(userService),
-                const SizedBox(height: 14),
-                _buildMapArea(userService),
-                _buildAttendeesSection(userService),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
+        child: StreamBuilder<List<AppUser>>(
+          stream: userService.getAllUsersWithStatus(),
+          builder: (_, snap) {
+            final allUsers = snap.data ?? [];
+            final onlineCount =
+                allUsers.where((u) => u.isCurrentlyOnline).length;
+            final offlineCount = allUsers.length - onlineCount;
+            final filteredUsers = _applyFilter(allUsers);
+
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    _buildHeader(onlineCount),
+                    const SizedBox(height: 14),
+                    _buildMapArea(filteredUsers),
+                    _buildAttendeesSection(
+                      filteredUsers: filteredUsers,
+                      allCount: allUsers.length,
+                      onlineCount: onlineCount,
+                      offlineCount: offlineCount,
+                      isLoading: snap.connectionState ==
+                          ConnectionState.waiting,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildHeader(UserService userService) {
-    return StreamBuilder<List<AppUser>>(
-      stream: userService.getOnlineUsers(),
-      builder: (_, snap) {
-        final count = snap.data?.length ?? 0;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildHeader(int onlineCount) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Live now',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xff0f1923),
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'ISP Europe Conference · Poland',
-                  style: TextStyle(fontSize: 12, color: Color(0xff888888)),
-                ),
-              ],
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0xffe8f8f5),
-                borderRadius: BorderRadius.circular(20),
+            Text(
+              'Live now',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: Color(0xff0f1923),
               ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'ISP Europe Conference · Poland',
+              style: TextStyle(fontSize: 12, color: Color(0xff888888)),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xffe8f8f5),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: Color(0xff3eb1c8),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                '$onlineCount online',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xff007398),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMapArea(List<AppUser> filteredUsers) {
+    return Container(
+      height: 220,
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xffeaf2f8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xffd4e6f1), width: 0.5),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            Center(
+              child: Icon(
+                Icons.language,
+                size: 120,
+                color: const Color(0xff003e6d).withValues(alpha: 0.15),
+              ),
+            ),
+            for (var i = 0; i < filteredUsers.length; i++)
+              _buildUserDot(filteredUsers[i], i),
+            Positioned(
+              bottom: 10,
+              left: 10,
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 7,
-                    height: 7,
+                    width: 8,
+                    height: 8,
                     decoration: const BoxDecoration(
                       color: Color(0xff3eb1c8),
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 5),
-                  Text(
-                    '$count online',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xff007398),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Online',
+                    style:
+                        TextStyle(fontSize: 9, color: Color(0xff555555)),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xffcccccc),
+                      shape: BoxShape.circle,
                     ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Offline',
+                    style:
+                        TextStyle(fontSize: 9, color: Color(0xff555555)),
                   ),
                 ],
               ),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  Widget _buildMapArea(UserService userService) {
-    return StreamBuilder<List<AppUser>>(
-      stream: userService.getAllUsersWithStatus(),
-      builder: (_, snap) {
-        final users = snap.data ?? [];
-        return Container(
-          height: 220,
-          margin: const EdgeInsets.only(bottom: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xffeaf2f8),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xffd4e6f1), width: 0.5),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              children: [
-                Center(
-                  child: Icon(
-                    Icons.language,
-                    size: 120,
-                    color: const Color(0xff003e6d).withValues(alpha: 0.15),
-                  ),
-                ),
-                for (var i = 0; i < users.length; i++)
-                  _buildUserDot(users[i], i),
-                Positioned(
-                  bottom: 10,
-                  left: 10,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xff3eb1c8),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Online',
-                        style: TextStyle(
-                            fontSize: 9, color: Color(0xff555555)),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xffcccccc),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Offline',
-                        style: TextStyle(
-                            fontSize: 9, color: Color(0xff555555)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -228,7 +262,13 @@ class LiveMapScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAttendeesSection(UserService userService) {
+  Widget _buildAttendeesSection({
+    required List<AppUser> filteredUsers,
+    required int allCount,
+    required int onlineCount,
+    required int offlineCount,
+    required bool isLoading,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -241,35 +281,114 @@ class LiveMapScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        StreamBuilder<List<AppUser>>(
-          stream: userService.getAllUsersWithStatus(),
-          builder: (_, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Color(0xff003e6d),
-                  ),
-                ),
-              );
-            }
-            final users = snap.data ?? [];
-            return Column(
-              children: [
-                for (var i = 0; i < users.length; i++) ...[
-                  if (i > 0) const SizedBox(height: 8),
-                  _UserCard(user: users[i], index: i),
-                ],
-              ],
-            );
-          },
+        // Filter chips
+        Row(
+          children: [
+            _FilterChip(
+              label: 'All',
+              count: allCount,
+              selected: _filter == 'all',
+              onTap: () => setState(() => _filter = 'all'),
+            ),
+            const SizedBox(width: 8),
+            _FilterChip(
+              label: 'Online',
+              count: onlineCount,
+              selected: _filter == 'online',
+              onTap: () => setState(() => _filter = 'online'),
+            ),
+            const SizedBox(width: 8),
+            _FilterChip(
+              label: 'Offline',
+              count: offlineCount,
+              selected: _filter == 'offline',
+              onTap: () => setState(() => _filter = 'offline'),
+            ),
+          ],
         ),
+        const SizedBox(height: 12),
+        if (isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xff003e6d),
+              ),
+            ),
+          )
+        else if (filteredUsers.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                _emptyMessage(),
+                style: const TextStyle(
+                    fontSize: 13, color: Color(0xff888888)),
+              ),
+            ),
+          )
+        else
+          Column(
+            children: [
+              for (var i = 0; i < filteredUsers.length; i++) ...[
+                if (i > 0) const SizedBox(height: 8),
+                _UserCard(user: filteredUsers[i], index: i),
+              ],
+            ],
+          ),
       ],
     );
   }
 }
+
+// ─── Filter Chip ──────────────────────────────────────────────────────────────
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? const Color(0xff003e6d)
+              : const Color(0xfff8f7f4),
+          borderRadius: BorderRadius.circular(20),
+          border: selected
+              ? null
+              : Border.all(
+                  color: const Color(0xffe0ddd6), width: 0.5),
+        ),
+        child: Text(
+          '$label ($count)',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: selected ? Colors.white : const Color(0xff888888),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Pulsing Dot ─────────────────────────────────────────────────────────────
 
 class _PulsingDot extends StatefulWidget {
   @override
@@ -318,6 +437,8 @@ class _PulsingDotState extends State<_PulsingDot>
     );
   }
 }
+
+// ─── User Card ────────────────────────────────────────────────────────────────
 
 class _UserCard extends StatelessWidget {
   const _UserCard({required this.user, required this.index});
@@ -432,6 +553,8 @@ class _UserCard extends StatelessWidget {
   }
 }
 
+// ─── User Profile Sheet ───────────────────────────────────────────────────────
+
 class _UserProfileSheet extends StatelessWidget {
   const _UserProfileSheet({required this.user, required this.color});
 
@@ -495,8 +618,7 @@ class _UserProfileSheet extends StatelessWidget {
               ),
               const Text(
                 ' · ',
-                style:
-                    TextStyle(fontSize: 13, color: Color(0xff888888)),
+                style: TextStyle(fontSize: 13, color: Color(0xff888888)),
               ),
               Text(
                 '${user.points} pts',
@@ -518,7 +640,8 @@ class _UserProfileSheet extends StatelessWidget {
               alignment: Alignment.center,
               child: const Text(
                 'Close',
-                style: TextStyle(fontSize: 14, color: Color(0xff0f1923)),
+                style:
+                    TextStyle(fontSize: 14, color: Color(0xff0f1923)),
               ),
             ),
           ),

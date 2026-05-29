@@ -80,16 +80,16 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 StreamBuilder<AppUser?>(
                   stream: _userService.getCurrentUser(),
                   builder: (_, snap) => _Header(user: snap.data),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 _TodayLessonCard(
                   lessons: _lessons,
                   completions: _completions,
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   progress: _progress,
                   loading: _lessonsLoading,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
               ],
             ),
           ),
@@ -136,22 +136,23 @@ class _Header extends StatelessWidget {
           children: [
             const Text(
               'Good morning',
-              style: TextStyle(fontSize: 11, color: Color(0xff888888)),
+              style: TextStyle(fontSize: 13, color: Color(0xff888888)),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
               _firstName,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 26,
                 fontWeight: FontWeight.w500,
                 color: Color(0xff0f1923),
+                letterSpacing: -0.5,
               ),
             ),
           ],
         ),
         Container(
-          width: 38,
-          height: 38,
+          width: 44,
+          height: 44,
           decoration: const BoxDecoration(
             color: Color(0xff003e6d),
             shape: BoxShape.circle,
@@ -160,9 +161,9 @@ class _Header extends StatelessWidget {
           child: Text(
             user?.initials ?? '?',
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               color: Colors.white,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -190,11 +191,11 @@ class _TodayLessonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (loading) {
       return Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        height: 150,
+        margin: const EdgeInsets.only(bottom: 16),
+        height: 168,
         decoration: BoxDecoration(
           color: const Color(0xff003e6d).withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: const Center(
           child: SizedBox(
@@ -232,21 +233,21 @@ class _TodayLessonCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.go('/lesson/${current!.id}'),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: const Color(0xff003e6d),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           child: Stack(
             children: [
               Positioned(
                 right: -30,
                 bottom: -30,
                 child: Container(
-                  width: 130,
-                  height: 130,
+                  width: 150,
+                  height: 150,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withValues(alpha: 0.05),
@@ -254,11 +255,11 @@ class _TodayLessonCard extends StatelessWidget {
                 ),
               ),
               Positioned(
-                right: 10,
-                bottom: -50,
+                right: 14,
+                bottom: -55,
                 child: Container(
-                  width: 100,
-                  height: 100,
+                  width: 110,
+                  height: 110,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withValues(alpha: 0.04),
@@ -266,7 +267,7 @@ class _TodayLessonCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -274,9 +275,9 @@ class _TodayLessonCard extends StatelessWidget {
                       children: List.generate(total, (i) {
                         return Expanded(
                           child: Container(
-                            margin:
-                                EdgeInsets.only(right: i < total - 1 ? 4 : 0),
-                            height: 3,
+                            margin: EdgeInsets.only(
+                                right: i < total - 1 ? 5 : 0),
+                            height: 3.5,
                             decoration: BoxDecoration(
                               color: i < completedCount
                                   ? const Color(0xfff9b625)
@@ -287,47 +288,47 @@ class _TodayLessonCard extends StatelessWidget {
                         );
                       }),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Text(
                       'DAY ${current.dayNumber} OF $total',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: Colors.white.withValues(alpha: 0.5),
-                        letterSpacing: 1.0,
+                        letterSpacing: 0.06 * 11,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       current.getTitle('en'),
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 17,
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
                         height: 1.35,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       '$sectionCount sections · ${current.totalQuestions} questions',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.45),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 18),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 7, horizontal: 13),
+                          vertical: 10, horizontal: 18),
                       decoration: BoxDecoration(
                         color: const Color(0xfff9b625),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         hasProgress ? 'Continue reading' : 'Start reading',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: Color(0xff3d2800),
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -343,29 +344,45 @@ class _TodayLessonCard extends StatelessWidget {
 
   Widget _buildCelebration() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xff003e6d),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          const Icon(Icons.emoji_events_rounded,
+              size: 40, color: Color(0xfff9b625)),
+          const SizedBox(height: 10),
           const Text(
-            "You've completed all lessons! 🎉",
+            'All lessons completed!',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Color(0xfff9b625),
+              color: Colors.white,
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             'Amazing work this week.',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               color: Colors.white.withValues(alpha: 0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Container(
+              width: 60,
+              height: 3,
+              decoration: BoxDecoration(
+                color: const Color(0xfff9b625),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
         ],
@@ -383,7 +400,7 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 16),
       child: StreamBuilder<AppUser?>(
         stream: userService.getCurrentUser(),
         builder: (_, userSnap) {
@@ -441,7 +458,7 @@ class _StatsRow extends StatelessWidget {
                       subColor: pointsSubColor,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: _StatCard(
                       label: 'Country rank',
@@ -476,26 +493,31 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         color: const Color(0xfff8f7f4),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
               style: const TextStyle(
-                  fontSize: 10, color: Color(0xff888888))),
+                  fontSize: 11, color: Color(0xff888888))),
           const SizedBox(height: 4),
           Text(value,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 26,
                 fontWeight: FontWeight.w500,
                 color: Color(0xff0f1923),
               )),
-          const SizedBox(height: 2),
-          Text(sub, style: TextStyle(fontSize: 10, color: subColor)),
+          const SizedBox(height: 3),
+          Text(sub,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: subColor,
+              )),
         ],
       ),
     );
@@ -517,7 +539,7 @@ class _OnlineNowRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 16),
       child: StreamBuilder<List<AppUser>>(
         stream: userService.getOnlineUsers(),
         builder: (_, snap) {
@@ -534,7 +556,7 @@ class _OnlineNowRow extends ConsumerWidget {
                   const Text(
                     'Online now',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Color(0xff0f1923),
                     ),
@@ -545,19 +567,19 @@ class _OnlineNowRow extends ConsumerWidget {
                     child: const Text(
                       'See all',
                       style: TextStyle(
-                          fontSize: 11, color: Color(0xff007398)),
+                          fontSize: 12, color: Color(0xff007398)),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               if (count == 0)
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'No one online right now',
                     style: TextStyle(
-                        fontSize: 11, color: Color(0xff888888)),
+                        fontSize: 12, color: Color(0xff888888)),
                   ),
                 )
               else
@@ -568,10 +590,10 @@ class _OnlineNowRow extends ConsumerWidget {
                       remaining: remaining,
                       colors: _avatarColors,
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Container(
-                      width: 6,
-                      height: 6,
+                      width: 7,
+                      height: 7,
                       decoration: const BoxDecoration(
                         color: Color(0xff3eb1c8),
                         shape: BoxShape.circle,
@@ -581,7 +603,7 @@ class _OnlineNowRow extends ConsumerWidget {
                     Text(
                       '$count online',
                       style: const TextStyle(
-                          fontSize: 11, color: Color(0xff888888)),
+                          fontSize: 12, color: Color(0xff888888)),
                     ),
                   ],
                 ),
@@ -608,32 +630,32 @@ class _AvatarStack extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalCircles = users.length + (remaining > 0 ? 1 : 0);
     final width = totalCircles <= 1
-        ? 30.0
-        : 30.0 + (totalCircles - 1) * 22.0;
+        ? 36.0
+        : 36.0 + (totalCircles - 1) * 26.0;
 
     return SizedBox(
       width: width,
-      height: 30,
+      height: 36,
       child: Stack(
         children: [
           for (var i = 0; i < users.length; i++)
             Positioned(
-              left: i * 22.0,
+              left: i * 26.0,
               child: _CircleAvatar(
                 color: colors[i % colors.length],
                 label: users[i].initials,
                 textColor: Colors.white,
-                fontSize: 9,
+                fontSize: 10,
               ),
             ),
           if (remaining > 0)
             Positioned(
-              left: users.length * 22.0,
+              left: users.length * 26.0,
               child: _CircleAvatar(
                 color: const Color(0xfff8f7f4),
                 label: '+$remaining',
                 textColor: const Color(0xff888888),
-                fontSize: 8,
+                fontSize: 9,
               ),
             ),
         ],
@@ -658,12 +680,12 @@ class _CircleAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 30,
-      height: 30,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: Colors.white, width: 2.5),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -703,14 +725,14 @@ class _AllLessonsSection extends StatelessWidget {
         const Text(
           'All lessons',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: Color(0xff0f1923),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         for (var i = 0; i < lessons.length; i++) ...[
-          if (i > 0) const SizedBox(height: 8),
+          if (i > 0) const SizedBox(height: 12),
           _LessonRow(
             lesson: lessons[i],
             isCompleted: completions[lessons[i].id] ?? false,
@@ -737,87 +759,116 @@ class _LessonRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isActive = !isCompleted && readProgress > 0;
 
-    final Color iconBoxColor;
-    final Color iconColor;
-    final IconData iconData;
-    final Color subColor;
-    final Color chevronColor;
-    final String subText;
-
     if (isCompleted) {
-      iconBoxColor = const Color(0xff003e6d);
-      iconColor = const Color(0xfff9b625);
-      iconData = Icons.check;
-      subColor = const Color(0xff888888);
-      chevronColor = const Color(0xffbbbbbb);
-      subText = 'Completed · ${lesson.pointsForReading} pts earned';
-    } else if (isActive) {
-      iconBoxColor = const Color(0xff003e6d);
-      iconColor = Colors.white;
-      iconData = Icons.menu_book_rounded;
-      subColor = const Color(0xff007398);
-      chevronColor = const Color(0xff003e6d);
-      subText = 'In progress · ${(readProgress * 100).round()}% done';
-    } else {
-      iconBoxColor = const Color(0xff003e6d);
-      iconColor = Colors.white;
-      iconData = Icons.menu_book_rounded;
-      subColor = const Color(0xff888888);
-      chevronColor = const Color(0xffbbbbbb);
-      subText =
-          '${lesson.sections.length} sections · ${lesson.totalQuestions} questions';
+      return _buildCard(
+        context: context,
+        tappable: true,
+        bgColor: const Color(0xfff8f7f4),
+        border: null,
+        iconBoxColor: const Color(0xff003e6d),
+        icon: Icons.check,
+        iconColor: const Color(0xfff9b625),
+        subText: 'Completed · ${lesson.pointsForReading} pts earned',
+        subColor: const Color(0xff888888),
+      );
     }
 
+    if (isActive) {
+      return _buildCard(
+        context: context,
+        tappable: true,
+        bgColor: const Color(0xfff0f5ff),
+        border: Border.all(color: const Color(0xff003e6d), width: 1.5),
+        iconBoxColor: const Color(0xff003e6d),
+        icon: Icons.menu_book_rounded,
+        iconColor: Colors.white,
+        subText: 'In progress · ${(readProgress * 100).round()}%',
+        subColor: const Color(0xff007398),
+      );
+    }
+
+    // Locked
+    return Opacity(
+      opacity: 0.45,
+      child: _buildCard(
+        context: context,
+        tappable: false,
+        bgColor: const Color(0xfff8f7f4),
+        border: null,
+        iconBoxColor: const Color(0xffcccccc),
+        icon: Icons.lock_outline,
+        iconColor: Colors.white,
+        subText: 'Not yet available',
+        subColor: const Color(0xff888888),
+      ),
+    );
+  }
+
+  Widget _buildCard({
+    required BuildContext context,
+    required bool tappable,
+    required Color bgColor,
+    required Border? border,
+    required Color iconBoxColor,
+    required IconData icon,
+    required Color iconColor,
+    required String subText,
+    required Color subColor,
+  }) {
+    final card = Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: border,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconBoxColor,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  lesson.getTitle('en'),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xff0f1923),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(subText,
+                    style: TextStyle(fontSize: 11, color: subColor)),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.chevron_right,
+            color: tappable
+                ? (border != null
+                    ? const Color(0xff003e6d)
+                    : const Color(0xffbbbbbb))
+                : const Color(0xffbbbbbb),
+            size: 20,
+          ),
+        ],
+      ),
+    );
+
+    if (!tappable) return card;
     return GestureDetector(
       onTap: () => context.go('/lesson/${lesson.id}'),
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isActive
-              ? const Color(0xfff0f5ff)
-              : const Color(0xfff8f7f4),
-          borderRadius: BorderRadius.circular(10),
-          border: isActive
-              ? Border.all(
-                  color: const Color(0xff003e6d), width: 1.5)
-              : null,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: iconBoxColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(iconData, color: iconColor, size: 16),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    lesson.getTitle('en'),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xff0f1923),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(subText,
-                      style:
-                          TextStyle(fontSize: 10, color: subColor)),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: chevronColor, size: 18),
-          ],
-        ),
-      ),
+      child: card,
     );
   }
 }

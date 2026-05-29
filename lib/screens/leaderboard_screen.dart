@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/app_user.dart';
 import '../services/user_service.dart';
@@ -94,12 +95,17 @@ class LeaderboardScreen extends StatelessWidget {
                       children: [
                         for (var i = 0; i < leaderboard.length; i++) ...[
                           if (i > 0) const SizedBox(height: 8),
-                          _CountryCard(
-                            rank: i + 1,
-                            country: leaderboard[i]['country'] as String,
-                            points: leaderboard[i]['points'] as int,
-                            members: leaderboard[i]['members'] as int,
-                            topPoints: topPoints,
+                          GestureDetector(
+                            onTap: () => context.push(
+                              '/country/${Uri.encodeComponent(leaderboard[i]['country'] as String)}',
+                            ),
+                            child: _CountryCard(
+                              rank: i + 1,
+                              country: leaderboard[i]['country'] as String,
+                              points: leaderboard[i]['points'] as int,
+                              members: leaderboard[i]['members'] as int,
+                              topPoints: topPoints,
+                            ),
                           ),
                         ],
                       ],
@@ -374,6 +380,12 @@ class _CountryCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: Color(0xff0f1923),
             ),
+          ),
+          const SizedBox(width: 4),
+          const Icon(
+            Icons.chevron_right,
+            size: 16,
+            color: Color(0xffbbbbbb),
           ),
         ],
       ),

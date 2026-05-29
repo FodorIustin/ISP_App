@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'firebase_options.dart';
 import 'screens/access_code_screen.dart';
 import 'screens/change_language_screen.dart';
+import 'screens/country_detail_screen.dart';
 import 'screens/language_screen.dart';
 import 'screens/lesson_complete_screen.dart';
 import 'screens/lesson_detail_screen.dart';
@@ -48,6 +49,12 @@ final _router = GoRouter(
     GoRoute(
       path: '/change-language',
       builder: (context, state) => const ChangeLanguageScreen(),
+    ),
+    GoRoute(
+      path: '/country/:countryName',
+      builder: (context, state) => CountryDetailScreen(
+        countryName: state.pathParameters['countryName']!,
+      ),
     ),
     GoRoute(
       path: '/home',
