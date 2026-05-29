@@ -6,8 +6,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
 import 'screens/access_code_screen.dart';
+import 'screens/change_language_screen.dart';
 import 'screens/language_screen.dart';
+import 'screens/lesson_complete_screen.dart';
 import 'screens/lesson_detail_screen.dart';
+import 'screens/lesson_questions_screen.dart';
+import 'screens/lesson_results_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_auth_screen.dart';
 import 'screens/register_profile_screen.dart';
@@ -42,16 +46,34 @@ final _router = GoRouter(
       builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
-      path: '/home',
-      builder: (context, state) => const MainShell(),
+      path: '/change-language',
+      builder: (context, state) => const ChangeLanguageScreen(),
     ),
     GoRoute(
-      path: '/',
+      path: '/home',
       builder: (context, state) => const MainShell(),
     ),
     GoRoute(
       path: '/lesson/:lessonId',
       builder: (context, state) => LessonDetailScreen(
+        lessonId: state.pathParameters['lessonId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/lesson-complete/:lessonId',
+      builder: (context, state) => LessonCompleteScreen(
+        lessonId: state.pathParameters['lessonId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/lesson-questions/:lessonId',
+      builder: (context, state) => LessonQuestionsScreen(
+        lessonId: state.pathParameters['lessonId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/lesson-results/:lessonId',
+      builder: (context, state) => LessonResultsScreen(
         lessonId: state.pathParameters['lessonId']!,
       ),
     ),

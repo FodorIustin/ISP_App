@@ -20,6 +20,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
   List<Lesson> _lessons = [];
   Map<String, bool> _completions = {};
   Map<String, double> _progress = {};
+  Map<String, bool> _answered = {};
   bool _loading = true;
 
   @override
@@ -41,18 +42,23 @@ class _LessonsScreenState extends State<LessonsScreen> {
     if (lessons.isEmpty) return;
     final completionFutures = lessons.map((l) => _service.isLessonCompleted(l.id));
     final progressFutures = lessons.map((l) => _service.getLessonProgress(l.id));
+    final answeredFutures = lessons.map((l) => _service.hasAnsweredQuestions(l.id));
     final completions = await Future.wait(completionFutures);
-    final progress = await Future.wait(progressFutures);
+    final progressMaps = await Future.wait(progressFutures);
+    final answered = await Future.wait(answeredFutures);
     if (!mounted) return;
     setState(() {
       _completions = Map.fromIterables(lessons.map((l) => l.id), completions);
-      _progress = Map.fromIterables(lessons.map((l) => l.id), progress);
+      _progress = Map.fromIterables(
+        lessons.map((l) => l.id),
+        progressMaps.map((m) => (m['progress'] as double?) ?? 0.0),
+      );
+      _answered = Map.fromIterables(lessons.map((l) => l.id), answered);
     });
   }
 
-  Future<void> _navigateToLesson(String lessonId) async {
-    await context.push<void>('/lesson/$lessonId');
-    if (mounted) await _loadProgress(_lessons);
+  void _navigateToLesson(String lessonId) {
+    context.go('/lesson/$lessonId');
   }
 
   @override
@@ -168,7 +174,10 @@ class _LessonsScreenState extends State<LessonsScreen> {
                                     !isCompleted && progress > 0;
 
                                 if (isCompleted) {
-                                  return _CompletedCard(lesson: lesson);
+                                  return _CompletedCard(
+                                    lesson: lesson,
+                                    hasAnswered: _answered[lesson.id] ?? false,
+                                  );
                                 } else if (isInProgress) {
                                   return _InProgressCard(
                                     lesson: lesson,
@@ -198,89 +207,107 @@ class _LessonsScreenState extends State<LessonsScreen> {
 // ─── Completed Card ───────────────────────────────────────────────────────────
 
 class _CompletedCard extends StatelessWidget {
-  const _CompletedCard({required this.lesson});
+  const _CompletedCard({required this.lesson, required this.hasAnswered});
   final Lesson lesson;
+  final bool hasAnswered;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xfff8f7f4),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xff003e6d),
-              borderRadius: BorderRadius.circular(10),
+    return GestureDetector(
+      onTap: () => hasAnswered
+          ? context.go('/lesson/${lesson.id}')
+          : context.go('/lesson-questions/${lesson.id}'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xfff8f7f4),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xff003e6d),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.check, color: Color(0xfff9b625), size: 18),
             ),
-            child: const Icon(Icons.check, color: Color(0xfff9b625), size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Day ${lesson.dayNumber}',
-                      style: const TextStyle(
-                          fontSize: 11, color: Color(0xff888888)),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xffe8f5e9),
-                        borderRadius: BorderRadius.circular(4),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Day ${lesson.dayNumber}',
+                        style: const TextStyle(
+                            fontSize: 11, color: Color(0xff888888)),
                       ),
-                      child: const Text(
-                        'Completed',
-                        style: TextStyle(
-                            fontSize: 9, color: Color(0xff2e7d32)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xffe8f5e9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Completed',
+                          style: TextStyle(
+                              fontSize: 9, color: Color(0xff2e7d32)),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  lesson.getTitle('en'),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xff0f1923),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${lesson.totalQuestions} questions',
-                  style: const TextStyle(
-                      fontSize: 11, color: Color(0xff888888)),
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    const Icon(Icons.star,
-                        color: Color(0xfff9b625), size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${lesson.pointsForReading} pts earned',
-                      style: const TextStyle(
-                          fontSize: 11, color: Color(0xff888888)),
+                  const SizedBox(height: 3),
+                  Text(
+                    lesson.getTitle('en'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xff0f1923),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${lesson.totalQuestions} questions',
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xff888888)),
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const Icon(Icons.star,
+                          color: Color(0xfff9b625), size: 12),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${lesson.pointsForReading} pts earned',
+                        style: const TextStyle(
+                            fontSize: 11, color: Color(0xff888888)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    hasAnswered
+                        ? 'Tap to re-read'
+                        : 'Tap to answer questions',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: hasAnswered
+                          ? const Color(0xff888888)
+                          : const Color(0xff007398),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

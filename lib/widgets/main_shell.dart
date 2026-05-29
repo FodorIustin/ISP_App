@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/navigation_provider.dart';
 import '../screens/home_screen.dart';
 import '../screens/leaderboard_screen.dart';
 import '../screens/lessons_screen.dart';
 import '../screens/live_map_screen.dart';
 import '../screens/profile_screen.dart';
+import '../services/presence_service.dart';
 
-class MainShell extends StatefulWidget {
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
-  int _index = 0;
+class _MainShellState extends ConsumerState<MainShell>
+    with WidgetsBindingObserver {
+  final _presence = PresenceService();
 
   static const _screens = [
     HomeScreen(),
@@ -25,7 +29,35 @@ class _MainShellState extends State<MainShell> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _presence.setOnline();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _presence.setOffline();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _presence.setOnline();
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        _presence.setOffline();
+      default:
+        break;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final index = ref.watch(navigationProvider);
     return Container(
       decoration: const BoxDecoration(
         border: Border(
@@ -34,7 +66,7 @@ class _MainShellState extends State<MainShell> {
       ),
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: IndexedStack(index: _index, children: _screens),
+        body: IndexedStack(index: index, children: _screens),
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -43,8 +75,8 @@ class _MainShellState extends State<MainShell> {
             ),
           ),
           child: BottomNavigationBar(
-            currentIndex: _index,
-            onTap: (i) => setState(() => _index = i),
+            currentIndex: index,
+            onTap: (i) => ref.read(navigationProvider.notifier).setIndex(i),
             backgroundColor: Colors.white,
             selectedItemColor: const Color(0xff003e6d),
             unselectedItemColor: const Color(0xffbbbbbb),
