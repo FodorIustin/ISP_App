@@ -17,6 +17,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_auth_screen.dart';
 import 'screens/register_profile_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/user_profile_screen.dart';
 import 'widgets/main_shell.dart';
 
 final _router = GoRouter(
@@ -82,6 +83,12 @@ final _router = GoRouter(
       path: '/lesson-results/:lessonId',
       builder: (context, state) => LessonResultsScreen(
         lessonId: state.pathParameters['lessonId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/user/:userId',
+      builder: (context, state) => UserProfileScreen(
+        userId: state.pathParameters['userId']!,
       ),
     ),
   ],

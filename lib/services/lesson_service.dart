@@ -46,7 +46,26 @@ class LessonService {
   ) async {
     final uid = _uid;
     if (uid == null) return;
-    await _db.collection('userProgress').doc(_docId(lessonId)).set({
+
+    final progressRef = _db.collection('userProgress').doc(_docId(lessonId));
+    final existing = await progressRef.get();
+
+    if (!existing.exists) {
+      final staleAnswers = await _db
+          .collection('userAnswers')
+          .where('userId', isEqualTo: uid)
+          .where('lessonId', isEqualTo: lessonId)
+          .get();
+      if (staleAnswers.docs.isNotEmpty) {
+        final batch = _db.batch();
+        for (final doc in staleAnswers.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
+    }
+
+    await progressRef.set({
       'userId': uid,
       'lessonId': lessonId,
       'progress': progress,
@@ -70,41 +89,58 @@ class LessonService {
   Future<void> markLessonCompleted(String lessonId) async {
     final uid = _uid;
     if (uid == null) return;
-    if (await isLessonCompleted(lessonId)) return;
 
-    final lessonDoc = await _db.collection('lessons').doc(lessonId).get();
-    final points =
-        (lessonDoc.data()?['pointsForReading'] as num?)?.toInt() ?? 0;
+    final progressRef = _db.collection('userProgress').doc(_docId(lessonId));
+    final existing = await progressRef.get();
+    final alreadyAwarded = existing.data()?['pointsAwarded'] == true;
 
-    await _db.collection('userProgress').doc(_docId(lessonId)).set({
+    final batch = _db.batch();
+
+    batch.set(progressRef, {
       'userId': uid,
       'lessonId': lessonId,
-      'progress': 1.0,
       'completed': true,
       'completedAt': FieldValue.serverTimestamp(),
+      'pointsAwarded': true,
     }, SetOptions(merge: true));
 
-    await _db
-        .collection('users')
-        .doc(uid)
-        .update({'points': FieldValue.increment(points)});
+    if (!alreadyAwarded) {
+      final lessonDoc = await _db.collection('lessons').doc(lessonId).get();
+      final points =
+          (lessonDoc.data()?['pointsForReading'] as num?)?.toInt() ?? 10;
+      batch.update(_db.collection('users').doc(uid), {
+        'points': FieldValue.increment(points),
+      });
+    }
+
+    await batch.commit();
   }
 
-  // Checks question 0 — answers are sequential so q0 existing means any answers exist.
   Future<bool> hasAnsweredQuestions(String lessonId) async {
     final uid = _uid;
     if (uid == null) return false;
-    final doc = await _db
-        .collection('userAnswers')
-        .doc('${uid}_${lessonId}_0')
+
+    final progressDoc = await _db
+        .collection('userProgress')
+        .doc(_docId(lessonId))
         .get();
-    return doc.exists;
+    if (!progressDoc.exists) return false;
+
+    final answersSnapshot = await _db
+        .collection('userAnswers')
+        .where('userId', isEqualTo: uid)
+        .where('lessonId', isEqualTo: lessonId)
+        .get();
+    return answersSnapshot.docs.isNotEmpty;
   }
 
   Future<bool> isLessonCompleted(String lessonId) async {
-    if (_uid == null) return false;
+    final uid = _uid;
+    if (uid == null) return false;
+
     final doc =
         await _db.collection('userProgress').doc(_docId(lessonId)).get();
+    if (!doc.exists) return false;
     return doc.data()?['completed'] == true;
   }
 
@@ -117,6 +153,12 @@ class LessonService {
   }) async {
     final uid = _uid;
     if (uid == null) return;
+
+    final progressDoc = await _db
+        .collection('userProgress')
+        .doc(_docId(lessonId))
+        .get();
+    if (!progressDoc.exists) return;
 
     final docId = '${uid}_${lessonId}_$questionIndex';
     final docRef = _db.collection('userAnswers').doc(docId);

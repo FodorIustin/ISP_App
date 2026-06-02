@@ -3,6 +3,7 @@
 // Create at: Firebase Console → Firestore → Indexes
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/app_user.dart';
 import '../services/user_service.dart';
@@ -79,7 +80,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
                     const SizedBox(height: 12),
                     _buildHeader(onlineCount),
                     const SizedBox(height: 14),
-                    _buildMapArea(filteredUsers),
+                    _buildMapArea(context, filteredUsers),
                     _buildAttendeesSection(
                       filteredUsers: filteredUsers,
                       allCount: allUsers.length,
@@ -154,7 +155,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     );
   }
 
-  Widget _buildMapArea(List<AppUser> filteredUsers) {
+  Widget _buildMapArea(BuildContext context, List<AppUser> filteredUsers) {
     return Container(
       height: 220,
       margin: const EdgeInsets.only(bottom: 14),
@@ -175,7 +176,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
               ),
             ),
             for (var i = 0; i < filteredUsers.length; i++)
-              _buildUserDot(filteredUsers[i], i),
+              _buildUserDot(context, filteredUsers[i], i),
             Positioned(
               bottom: 10,
               left: 10,
@@ -219,7 +220,26 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     );
   }
 
-  Widget _buildUserDot(AppUser user, int index) {
+  void _showUserSheet(BuildContext context, AppUser user, int index) {
+    const avatarColors = [
+      Color(0xff3eb1c8),
+      Color(0xff007398),
+      Color(0xffdd7d1b),
+      Color(0xff003e6d),
+      Color(0xfff9b625),
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _UserProfileSheet(
+        user: user,
+        color: avatarColors[index % avatarColors.length],
+      ),
+    );
+  }
+
+  Widget _buildUserDot(BuildContext context, AppUser user, int index) {
     final pos = _positions[index % _positions.length];
     final firstName = _firstName(user);
     final isOnline = user.isCurrentlyOnline;
@@ -227,7 +247,9 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     return Positioned(
       left: pos.$1,
       top: pos.$2,
-      child: Column(
+      child: GestureDetector(
+        onTap: () => _showUserSheet(context, user, index),
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
@@ -258,6 +280,7 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
               ),
             ),
         ],
+      ),
       ),
     );
   }
@@ -454,25 +477,13 @@ class _UserCard extends StatelessWidget {
     Color(0xfff9b625),
   ];
 
-  void _showProfile(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _UserProfileSheet(
-        user: user,
-        color: _avatarColors[index % _avatarColors.length],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isOnline = user.isCurrentlyOnline;
     final color = _avatarColors[index % _avatarColors.length];
 
     return GestureDetector(
-      onTap: () => _showProfile(context),
+      onTap: () => context.push('/user/${user.uid}'),
       child: Container(
         padding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -628,6 +639,31 @@ class _UserProfileSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
+          GestureDetector(
+            onTap: () {
+              final router = GoRouter.of(context);
+              router.pop();
+              router.push('/user/${user.uid}');
+            },
+            child: Container(
+              width: double.infinity,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xff003e6d),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'View profile',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(

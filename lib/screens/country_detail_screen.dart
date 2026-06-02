@@ -136,15 +136,19 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
                     else
                       for (var i = 0; i < members.length; i++) ...[
                         if (i > 0) const SizedBox(height: 8),
-                        Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 16),
-                          child: _MemberCard(
-                            user: members[i],
-                            rank: i + 1,
-                            totalLessons: _totalLessons,
-                            completionFuture:
-                                _getCompletionFuture(members[i].uid),
+                        GestureDetector(
+                          onTap: () =>
+                              context.push('/user/${members[i].uid}'),
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: _MemberCard(
+                              user: members[i],
+                              rank: i + 1,
+                              totalLessons: _totalLessons,
+                              completionFuture:
+                                  _getCompletionFuture(members[i].uid),
+                            ),
                           ),
                         ),
                       ],
