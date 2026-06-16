@@ -425,6 +425,12 @@ class _AccountSection extends StatelessWidget {
           child: Column(
             children: [
               _AccountRow(
+                icon: Icons.chat_bubble_outline,
+                label: 'Messages',
+                onTap: () => context.push('/conversations'),
+              ),
+              const Divider(height: 0.5, thickness: 0.5, color: Color(0xffeeeeee)),
+              _AccountRow(
                 icon: Icons.person_outline,
                 label: 'Edit profile',
                 onTap: user != null ? () => onEditProfile(user) : null,

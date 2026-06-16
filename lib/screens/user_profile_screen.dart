@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../models/app_user.dart';
 import '../models/lesson.dart';
+import '../services/chat_service.dart';
 import '../services/lesson_service.dart';
 import '../services/user_service.dart';
 
@@ -171,7 +172,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 completedCount: _completedCount,
                 rankLabel: rankLabel,
               ),
-              _MessageButton(userId: widget.userId),
+              _MessageButton(
+                userId: widget.userId,
+                userName: user.name,
+                userCountry: user.country,
+              ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
@@ -361,16 +366,47 @@ class _StatItem extends StatelessWidget {
 
 // ─── Message Button ───────────────────────────────────────────────────────────
 
-class _MessageButton extends StatelessWidget {
-  const _MessageButton({required this.userId});
+class _MessageButton extends StatefulWidget {
+  const _MessageButton({
+    required this.userId,
+    required this.userName,
+    required this.userCountry,
+  });
+
   final String userId;
+  final String userName;
+  final String userCountry;
+
+  @override
+  State<_MessageButton> createState() => _MessageButtonState();
+}
+
+class _MessageButtonState extends State<_MessageButton> {
+  bool _loading = false;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: GestureDetector(
-        onTap: () => context.push('/chat/direct/$userId'),
+        onTap: _loading
+            ? null
+            : () async {
+                final router = GoRouter.of(context);
+                setState(() => _loading = true);
+                try {
+                  final chatId =
+                      await ChatService().getOrCreateDirectChat(
+                    widget.userId,
+                    widget.userName,
+                    widget.userCountry,
+                  );
+                  if (!mounted) return;
+                  router.push('/chat/$chatId');
+                } finally {
+                  if (mounted) setState(() => _loading = false);
+                }
+              },
         child: Container(
           height: 48,
           decoration: BoxDecoration(
@@ -378,25 +414,36 @@ class _MessageButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xffe0ddd6), width: 0.5),
           ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.chat_bubble_outline,
-                size: 18,
-                color: Color(0xff003e6d),
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Send message',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xff003e6d),
+          child: _loading
+              ? const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xff003e6d),
+                    ),
+                  ),
+                )
+              : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 18,
+                      color: Color(0xff003e6d),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Send message',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xff003e6d),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );

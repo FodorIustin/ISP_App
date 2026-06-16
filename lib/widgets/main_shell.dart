@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,6 +21,7 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell>
     with WidgetsBindingObserver {
   final _presence = PresenceService();
+  Timer? _presenceTimer;
 
   static const _screens = [
     HomeScreen(),
@@ -33,11 +36,16 @@ class _MainShellState extends ConsumerState<MainShell>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _presence.setOnline();
+    _presenceTimer = Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => _presence.setOnline(),
+    );
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _presenceTimer?.cancel();
     _presence.setOffline();
     super.dispose();
   }
@@ -47,8 +55,13 @@ class _MainShellState extends ConsumerState<MainShell>
     switch (state) {
       case AppLifecycleState.resumed:
         _presence.setOnline();
+        _presenceTimer = Timer.periodic(
+          const Duration(seconds: 60),
+          (_) => _presence.setOnline(),
+        );
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
+        _presenceTimer?.cancel();
         _presence.setOffline();
       default:
         break;

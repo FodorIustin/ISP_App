@@ -16,6 +16,8 @@ import 'screens/lesson_results_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_auth_screen.dart';
 import 'screens/register_profile_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/conversations_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/user_profile_screen.dart';
 import 'widgets/main_shell.dart';
@@ -89,6 +91,16 @@ final _router = GoRouter(
       path: '/user/:userId',
       builder: (context, state) => UserProfileScreen(
         userId: state.pathParameters['userId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/conversations',
+      builder: (context, state) => const ConversationsScreen(),
+    ),
+    GoRoute(
+      path: '/chat/:chatId',
+      builder: (context, state) => ChatScreen(
+        chatId: state.pathParameters['chatId']!,
       ),
     ),
   ],
