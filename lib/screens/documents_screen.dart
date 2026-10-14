@@ -14,7 +14,17 @@ class DocumentsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final docs = ref.watch(documentsProvider);
+    final canUpload = ref.watch(isUploaderProvider).value ?? false;
     return Scaffold(
+      floatingActionButton: canUpload
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('/documents/upload'),
+              backgroundColor: _royalBlue,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Upload'),
+            )
+          : null,
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Documents'),
@@ -28,7 +38,7 @@ class DocumentsScreen extends ConsumerWidget {
         data: (list) => list.isEmpty
             ? const _Message('No documents yet.')
             : ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                 itemCount: list.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, i) => _DocumentTile(doc: list[i]),

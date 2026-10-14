@@ -21,6 +21,7 @@ import 'screens/register_profile_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/conversations_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/upload_document_screen.dart';
 import 'screens/user_profile_screen.dart';
 import 'widgets/main_shell.dart';
 
@@ -108,6 +109,11 @@ final _router = GoRouter(
     GoRoute(
       path: '/documents',
       builder: (context, state) => const DocumentsScreen(),
+    ),
+    // before /documents/:documentId, so "upload" is not taken for a document id
+    GoRoute(
+      path: '/documents/upload',
+      builder: (context, state) => const UploadDocumentScreen(),
     ),
     GoRoute(
       path: '/documents/:documentId',

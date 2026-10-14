@@ -18,6 +18,18 @@ service firebase.storage {
       allow read, write: if request.auth != null;
     }
 
+    // uploads waiting to be published (functions: publishDocument checks the uploader
+    // list and the real file type, then moves the file to documents/). Only the owner,
+    // PDF or Word, at most 50 MB. Left-over files are deleted after 1 day.
+    match /uploads/{uid}/{fileName} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 50 * 1024 * 1024
+        && (request.resource.contentType == 'application/pdf'
+            || request.resource.contentType ==
+               'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+
     // original documents and their translations: read-only for signed-in users,
     // written only by the server
     match /documents/{documentId}/{allPaths=**} {

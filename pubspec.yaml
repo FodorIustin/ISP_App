@@ -23,6 +23,8 @@ dependencies:
   cloud_functions: 6.3.0
   # opens a translated document in the phone's own viewer
   url_launcher: ^6.3.1
+  # picks a PDF or Word file to upload (Files / iCloud Drive; Android's file chooser)
+  file_picker: ^13.1.0
   google_sign_in: ^7.2.0
   image_picker: ^1.2.2
   shared_preferences: ^2.5.5

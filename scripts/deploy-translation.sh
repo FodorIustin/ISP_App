@@ -6,8 +6,8 @@
 # Before it, once: the translation job exists (isp-doc-translate: deploy/setup.sh,
 # deploy/release.sh) and config/translation is published (deploy/publish-config.sh).
 #
-# Identity isp-functions (no key file): what requestTranslation runs as. It may
-# read/write Firestore and start the translation job, nothing else.
+# Identity isp-functions (no key file): what the translation and document functions run
+# as. It may read/write Firestore and the Firebase bucket and start the translation job.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -29,7 +29,21 @@ gcloud projects add-iam-policy-binding "$PROJECT" --member "serviceAccount:$FN_S
   --role roles/datastore.user --condition None >/dev/null
 gcloud run jobs add-iam-policy-binding "$JOB" --region "$REGION" --member "serviceAccount:$FN_SA" \
   --role roles/run.jobsExecutorWithOverrides >/dev/null
-echo "isp-functions: Firestore + may start job $JOB"
+BUCKET="$PROJECT.firebasestorage.app"
+gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member "serviceAccount:$FN_SA" \
+  --role roles/storage.objectAdmin >/dev/null
+echo "isp-functions: Firestore, the Firebase bucket, may start job $JOB"
+
+say "abandoned uploads (uploads/) deleted after 1 day"
+current=$(gcloud storage buckets describe "gs://$BUCKET" --format="value(lifecycle_config)")
+if [ -z "$current" ] || echo "$current" | grep -q "uploads/"; then
+  printf '{"rule":[{"action":{"type":"Delete"},"condition":{"age":1,"matchesPrefix":["uploads/"]}}]}' \
+    > /tmp/isp-uploads-lifecycle.json
+  gcloud storage buckets update "gs://$BUCKET" --lifecycle-file /tmp/isp-uploads-lifecycle.json >/dev/null
+  echo "lifecycle rule set"
+else
+  echo "the bucket already has other lifecycle rules; not changed (add the uploads/ rule by hand)"
+fi
 
 say "function tests"
 # pass/fail is the test runner's exit code (its text format differs between Node versions)

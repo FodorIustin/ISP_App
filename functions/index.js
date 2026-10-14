@@ -113,3 +113,61 @@ exports.requestTranslation = onCall(
     }
   },
 );
+
+// ------------------------------------------------------------------ documents
+// publishDocument: an uploader turns a file they put in uploads/{uid}/ into a document.
+// deleteDocument: the uploader removes it with all its translations.
+// Logic: translation/documents.js. Uploaders are listed in uploaders/{uid} (server only;
+// scripts/add-uploader.sh).
+const { publishDocument, deleteDocument } = require('./translation/documents');
+
+function documentDeps() {
+  const fs = admin.firestore();
+  const bucket = admin.storage().bucket();
+  return {
+    db: {
+      doc: (path) => fs.doc(path),
+      translationsOf: async (documentId) =>
+        (await fs.collection('translations').where('documentId', '==', documentId).get())
+          .docs.map((d) => d.ref),
+    },
+    storage: {
+      size: async (path) => {
+        try {
+          const [meta] = await bucket.file(path).getMetadata();
+          return Number(meta.size);
+        } catch (e) {
+          if (e && e.code === 404) return null;
+          throw e;
+        }
+      },
+      read: async (path) => (await bucket.file(path).download())[0],
+      copy: (from, to) => bucket.file(from).copy(bucket.file(to)),
+      delete: (path) => bucket.file(path).delete({ ignoreNotFound: true }),
+      deletePrefix: (prefix) => bucket.deleteFiles({ prefix }),
+    },
+    newId: () => fs.collection('documents').doc().id,
+    timestamp: () => admin.firestore.FieldValue.serverTimestamp(),
+    log: (...a) => console.log(...a),
+  };
+}
+
+function callable(fn, extra = {}) {
+  return onCall(
+    { region: TRANSLATION.region, serviceAccount: TRANSLATION.serviceAccount, maxInstances: 5,
+      ...extra },
+    async (request) => {
+      try {
+        return await fn(request.auth ? request.auth.uid : null, request.data, documentDeps());
+      } catch (e) {
+        if (e instanceof RequestError) throw new HttpsError(e.code, e.message);
+        console.error(e);
+        throw new HttpsError('internal', 'request failed');
+      }
+    },
+  );
+}
+
+// reads the whole upload (at most 50 MB) to check what it really is
+exports.publishDocument = callable(publishDocument, { memory: '512MiB', timeoutSeconds: 120 });
+exports.deleteDocument = callable(deleteDocument, { timeoutSeconds: 120 });

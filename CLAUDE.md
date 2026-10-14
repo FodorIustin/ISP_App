@@ -36,10 +36,16 @@ scripts/deploy-translation.sh    # in Cloud Shell: functions + Firestore/Storage
 
 The translation engine is a separate repo (`FodorIustin/isp-doc-translate`, Cloud Run
 Job `isp-translate`); **never put the Python pipeline in this project**. Here:
-- `functions/translation/` + `functions/index.js` `requestTranslation`: the only way to
-  start a translation (the app never writes `translations/`).
+- `functions/translation/` + `functions/index.js`: `requestTranslation` (the only way to
+  start a translation; the app never writes `translations/`), `publishDocument` /
+  `deleteDocument` (uploads: the app puts the file in `uploads/{uid}/`, the function checks
+  the uploader list `uploaders/{uid}` and the real file type, then publishes it).
+- Uploaders are added with `scripts/add-uploader.sh EMAIL` (server-side list; becomes the
+  leader/admin role later). During testing uploads are published at once
+  (`documents.js` SETTINGS.initialStatus; `in_review` once approval exists).
 - `lib/services/translation_service.dart`, `lib/providers/translation_providers.dart`,
-  screens `documents_screen.dart`, `document_translate_screen.dart`.
+  screens `documents_screen.dart`, `document_translate_screen.dart`,
+  `upload_document_screen.dart`.
 - Firestore: `documents/{id}` (published documents), `translations/{documentId}__{lang}`
   (status queued → running → ready / needs_review / refused / failed, files, cost),
   `config/translation` (languages offered; published by the engine repo).

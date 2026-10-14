@@ -1,6 +1,8 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -76,6 +78,29 @@ class _DocumentTranslateScreenState extends ConsumerState<DocumentTranslateScree
     }
   }
 
+  Future<void> _delete(TranslatableDocument doc) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Delete document?'),
+        content: Text('"${doc.title}" and all its translations will be removed for everyone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await ref.read(translationServiceProvider).delete(doc.id);
+      if (mounted) context.pop();
+    } on FirebaseFunctionsException catch (e) {
+      _snack(e.message ?? 'The document could not be deleted.');
+    } catch (e) {
+      _snack('The document could not be deleted. Check your connection.');
+    }
+  }
+
   void _snack(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
@@ -92,6 +117,16 @@ class _DocumentTranslateScreenState extends ConsumerState<DocumentTranslateScree
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(doc?.title ?? 'Translate'),
+        actions: [
+          if (doc != null &&
+              doc.uploadedBy != null &&
+              doc.uploadedBy == FirebaseAuth.instance.currentUser?.uid)
+            IconButton(
+              tooltip: 'Delete document',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _delete(doc),
+            ),
+        ],
         backgroundColor: Colors.white,
         foregroundColor: _royalBlue,
         elevation: 0,

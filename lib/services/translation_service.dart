@@ -4,10 +4,16 @@
 //   documents/{id}       read if signed in and status == 'published'
 //   translations/{id}    read if signed in; written only by the server
 //   config/{doc}         read by anyone
-// Storage rules (storage.rules): documents/ and translations/ readable when signed in.
+//   uploaders/{uid}      the user may read their own entry (shows the Upload button)
+// Storage rules (storage.rules): documents/ and translations/ readable when signed in;
+// uploads/{uid}/ writable by its owner (PDF/Word, at most 50 MB).
+
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 import '../models/translatable_document.dart';
@@ -72,6 +78,56 @@ class TranslationService {
     await _functions
         .httpsCallable('requestTranslation')
         .call({'documentId': documentId, 'lang': lang});
+  }
+
+  /// Largest file that can be uploaded (same limit as storage.rules and the function).
+  static const maxUploadBytes = 50 * 1024 * 1024;
+
+  /// Whether the signed-in user may upload documents.
+  Stream<bool> isUploader() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return Stream.value(false);
+    return _db.collection('uploaders').doc(uid).snapshots().map((d) => d.exists).handleError((_) => false);
+  }
+
+  /// Uploads a PDF or Word file and publishes it as a document; returns its id.
+  /// onProgress gets 0..1 while the file is sent.
+  Future<String> upload({
+    required PlatformFile file,
+    required String title,
+    void Function(double)? onProgress,
+  }) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) throw StateError('not signed in');
+    final ext = (file.extension ?? '').toLowerCase();
+    if (ext != 'pdf' && ext != 'docx') throw ArgumentError('only PDF or Word (.docx) files');
+    final ref = FirebaseStorage.instance.ref('uploads/$uid/${DateTime.now().millisecondsSinceEpoch}.$ext');
+    final meta = SettableMetadata(
+      contentType: ext == 'pdf'
+          ? 'application/pdf'
+          : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    final path = file.path;
+    final task = path != null ? ref.putFile(File(path), meta) : ref.putData(await file.readAsBytes(), meta);
+    final sub = task.snapshotEvents.listen((s) {
+      if (s.totalBytes > 0) onProgress?.call(s.bytesTransferred / s.totalBytes);
+    });
+    try {
+      await task;
+    } finally {
+      await sub.cancel();
+    }
+    final result = await _functions
+        .httpsCallable('publishDocument', options: HttpsCallableOptions(timeout: const Duration(minutes: 2)))
+        .call({'uploadPath': ref.fullPath, 'title': title, 'fileName': file.name});
+    return (result.data as Map)['documentId'] as String;
+  }
+
+  /// Removes a document the user uploaded, with all its translations.
+  Future<void> delete(String documentId) async {
+    await _functions
+        .httpsCallable('deleteDocument', options: HttpsCallableOptions(timeout: const Duration(minutes: 2)))
+        .call({'documentId': documentId});
   }
 
   /// A link to the result file (valid until the file is replaced).

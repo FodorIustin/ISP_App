@@ -25,3 +25,8 @@ final documentTranslationsProvider =
     StreamProvider.autoDispose.family<Map<String, TranslationRecord>, String>(
   (ref, documentId) => ref.watch(translationServiceProvider).translationsOf(documentId),
 );
+
+/// Whether the signed-in user may upload documents (uploaders/{uid}).
+final isUploaderProvider = StreamProvider.autoDispose<bool>(
+  (ref) => ref.watch(translationServiceProvider).isUploader(),
+);

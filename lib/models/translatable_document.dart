@@ -10,6 +10,9 @@ class TranslatableDocument {
   final String sourceLang;
   final bool test;
 
+  /// uid of the person who uploaded it (null for documents added by script).
+  final String? uploadedBy;
+
   const TranslatableDocument({
     required this.id,
     required this.title,
@@ -17,6 +20,7 @@ class TranslatableDocument {
     required this.kind,
     required this.sourceLang,
     required this.test,
+    this.uploadedBy,
   });
 
   factory TranslatableDocument.fromFirestore(DocumentSnapshot doc) {
@@ -28,6 +32,7 @@ class TranslatableDocument {
       kind: data['kind'] as String? ?? '',
       sourceLang: data['sourceLang'] as String? ?? 'en',
       test: data['test'] as bool? ?? false,
+      uploadedBy: data['uploadedBy'] as String?,
     );
   }
 }

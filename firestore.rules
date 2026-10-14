@@ -45,6 +45,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Who may upload documents (scripts/add-uploader.sh). A user can only see whether
+    // they themselves are on the list (to show the Upload button).
+    match /uploaders/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
     // One record per (document, language), written only by the server
     // (functions/translation, the translation job). Signed-in users follow its status.
     match /translations/{recordId} {
