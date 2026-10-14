@@ -46,3 +46,6 @@ app.*.map.json
 scripts/serviceAccountKey.json
 scripts/node_modules/
 scripts/package-lock.json
+functions/node_modules/
+functions/.env
+functions/package-lock.json

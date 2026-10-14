@@ -1,84 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/lesson.dart';
 import '../services/lesson_service.dart';
-
-// ─── Question data model (hardcoded until Firebase questions are built) ───────
-
-enum _QType { multipleChoice, openText }
-
-class _Question {
-  const _Question({
-    required this.index,
-    required this.type,
-    required this.text,
-    this.options = const [],
-    this.correctIndex = -1,
-    this.points = 0,
-  });
-
-  final int index;
-  final _QType type;
-  final String text;
-  final List<String> options;
-  final int correctIndex;
-  final int points;
-}
-
-const _lesson1Questions = <_Question>[
-  _Question(
-    index: 0,
-    type: _QType.multipleChoice,
-    text:
-        'According to the lesson, what happens when teachers gather with a shared purpose?',
-    options: [
-      'They compete for the best teaching methods',
-      'The walls separating them dissolve and belonging replaces isolation',
-      'They focus only on curriculum development',
-      'They become more independent in their work',
-    ],
-    correctIndex: 1,
-    points: 20,
-  ),
-  _Question(
-    index: 1,
-    type: _QType.multipleChoice,
-    text:
-        'What does the book of Proverbs say about people sharpening each other?',
-    options: [
-      'As water shapes stone, so patience shapes character',
-      'As light guides the path, so wisdom guides people',
-      'As iron sharpens iron, so one person sharpens another',
-      'As wind bends the tree, so hardship builds strength',
-    ],
-    correctIndex: 2,
-    points: 20,
-  ),
-  _Question(
-    index: 2,
-    type: _QType.openText,
-    text:
-        'Reflect on a time when community made a difference in your teaching. What happened and what did you learn?',
-  ),
-  _Question(
-    index: 3,
-    type: _QType.multipleChoice,
-    text: 'What is the ISP vision according to this lesson?',
-    options: [
-      'To build the largest network of Christian schools worldwide',
-      'To provide funding for teachers in developing countries',
-      'A community of Christ-directed teachers that can transform classrooms, cities and nations',
-      'To translate the Bible into every language through teachers',
-    ],
-    correctIndex: 2,
-    points: 20,
-  ),
-];
-
-List<_Question> _questionsFor(String lessonId) {
-  if (lessonId == 'lesson_1') return _lesson1Questions;
-  return [];
-}
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -93,7 +17,9 @@ class LessonQuestionsScreen extends StatefulWidget {
 class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
   final _service = LessonService();
   final _textController = TextEditingController();
-  late final List<_Question> _questions;
+
+  bool _isLoading = true;
+  List<LessonQuestion> _questions = [];
 
   int _currentIndex = 0;
   int? _selectedOption;
@@ -103,20 +29,29 @@ class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
   @override
   void initState() {
     super.initState();
-    _questions = _questionsFor(widget.lessonId);
-    _checkIfAlreadyAnswered();
+    _init();
   }
 
-  Future<void> _checkIfAlreadyAnswered() async {
-    final answered =
-        await _service.hasAnsweredQuestions(widget.lessonId);
-    if (!mounted || !answered) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('You have already answered these questions'),
-      backgroundColor: Color(0xff007398),
-      duration: Duration(seconds: 3),
-    ));
-    context.go('/home');
+  Future<void> _init() async {
+    final answered = await _service.hasAnsweredQuestions(widget.lessonId);
+    if (!mounted) return;
+    if (answered) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('You have already answered these questions'),
+        backgroundColor: Color(0xff007398),
+        duration: Duration(seconds: 3),
+      ));
+      context.go('/home');
+      return;
+    }
+
+    final lesson = await _service.getLessonById(widget.lessonId);
+    if (!mounted) return;
+
+    setState(() {
+      _questions = lesson?.questions ?? [];
+      _isLoading = false;
+    });
   }
 
   @override
@@ -125,7 +60,7 @@ class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
     super.dispose();
   }
 
-  _Question get _q => _questions[_currentIndex];
+  LessonQuestion get _q => _questions[_currentIndex];
   bool get _isLast => _currentIndex == _questions.length - 1;
 
   void _selectOption(int index) {
@@ -145,7 +80,7 @@ class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
 
     await _service.saveQuestionAnswer(
       lessonId: widget.lessonId,
-      questionIndex: _q.index,
+      questionIndex: _currentIndex,
       isCorrect: isCorrect,
       points: isCorrect ? _q.points : 0,
     );
@@ -169,7 +104,7 @@ class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
 
     await _service.saveQuestionAnswer(
       lessonId: widget.lessonId,
-      questionIndex: _q.index,
+      questionIndex: _currentIndex,
       answerText: text,
       isCorrect: false,
       points: 0,
@@ -202,13 +137,24 @@ class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: _appBar(),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     if (_questions.isEmpty) {
       return Scaffold(
         backgroundColor: Colors.white,
         appBar: _appBar(),
         body: const Center(
-          child: Text('No questions available.',
-              style: TextStyle(color: Color(0xff888888))),
+          child: Text(
+            'No questions available for this lesson yet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Color(0xff888888)),
+          ),
         ),
       );
     }
@@ -250,7 +196,7 @@ class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
                   const SizedBox(height: 12),
                   // Question text
                   Text(
-                    q.text,
+                    q.textEn,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
@@ -260,9 +206,9 @@ class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
                   ),
                   const SizedBox(height: 24),
                   // Answer area
-                  if (q.type == _QType.multipleChoice)
+                  if (q.isMultipleChoice)
                     _OptionList(
-                      options: q.options,
+                      options: q.optionsEn,
                       selectedIndex: _selectedOption,
                       correctIndex:
                           _hasSubmitted ? q.correctIndex : null,
@@ -289,7 +235,7 @@ class _LessonQuestionsScreenState extends State<LessonQuestionsScreen> {
   Widget? _buildBottomButton() {
     final q = _q;
 
-    if (q.type == _QType.openText) {
+    if (q.isOpen) {
       return _PrimaryButton(
         label: 'Submit reflection',
         color: const Color(0xff007398),
