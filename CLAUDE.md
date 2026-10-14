@@ -1,34 +1,47 @@
-# CLAUDE.md
+# CLAUDE.md — ISPapp (Flutter + Firebase)
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+App for the International School Project (ISP): a global platform for teachers.
+Plan, decisions and progress live in the ISPapp Claude project (start with the project
+instructions; translation: `claude/document-translation-feature.md`).
 
 ## Commands
 
 ```bash
-flutter pub get          # Install dependencies
-flutter run              # Run on connected device/emulator
-flutter test             # Run all tests
-flutter test test/widget_test.dart  # Run a single test file
-flutter analyze          # Static analysis (dart analyzer + flutter_lints)
-flutter build apk        # Android
-flutter build ios        # iOS
-flutter build web        # Web
+flutter pub get
+flutter run                      # iOS Simulator normally; physical iPhone for auth/presence
+flutter analyze
+flutter test
+cd functions && npm test         # Cloud Functions tests (Node's test runner, no emulator)
+scripts/deploy-translation.sh    # in Cloud Shell: functions + Firestore/Storage rules
 ```
 
-## Architecture
+## Conventions
 
-This is a standard Flutter app targeting all 6 platforms (Android, iOS, Web, macOS, Linux, Windows).
+- Targets: iOS and Android only.
+- State: Riverpod (`lib/providers/`); navigation: GoRouter (`lib/main.dart`).
+- Folders: `lib/screens/ widgets/ services/ models/ providers/`.
+- Brand: Royal Blue `#003E6D`, Gold `#F9B625`, Teal `#3EB1C8`, Orange `#DD7D1B`.
+- **Ask before adding any package** (Flutter or npm).
+- UI first with hardcoded data, then wire to Firebase. Content (lessons) is data, not code.
 
-- **Entry point:** `lib/main.dart` — currently a single-file default template
-- **State management:** Plain `setState` (no BLoC/Provider/Riverpod)
-- **Theme:** Material 3 with `ColorScheme.fromSeed`
-- **Linting:** `flutter_lints` defaults via `analysis_options.yaml`
+## Firebase (project ispapp-9f09d, Firestore nam5, functions us-central1)
 
-The app has a single `StatefulWidget` (`MyHomePage`) with a counter. As features are added, split into subdirectories under `lib/` (e.g., `screens/`, `widgets/`, `services/`).
+- **Security rules are versioned here** (`firestore.rules`, `storage.rules`) and deployed
+  with the functions. Never edit them in the console (the next deploy overwrites it).
+- Functions: Node.js 22 (`firebase.json`; Node 22 is retired for functions 2027-10-31).
+  `functions/package-lock.json` is committed.
+- Secrets never in the app or git (`scripts/serviceAccountKey.json` is ignored).
 
-## Dependencies
+## Document translation
 
-Direct runtime dependencies (beyond Flutter SDK):
-- `cupertino_icons: ^1.0.8`
-
-Dev: `flutter_lints: ^6.0.0`
+The translation engine is a separate repo (`FodorIustin/isp-doc-translate`, Cloud Run
+Job `isp-translate`); **never put the Python pipeline in this project**. Here:
+- `functions/translation/` + `functions/index.js` `requestTranslation`: the only way to
+  start a translation (the app never writes `translations/`).
+- `lib/services/translation_service.dart`, `lib/providers/translation_providers.dart`,
+  screens `documents_screen.dart`, `document_translate_screen.dart`.
+- Firestore: `documents/{id}` (published documents), `translations/{documentId}__{lang}`
+  (status queued → running → ready / needs_review / refused / failed, files, cost),
+  `config/translation` (languages offered; published by the engine repo).
+- During testing, `needs_review` results are shown labelled "Not yet checked"; before
+  real users they must be hidden until an admin approves them.

@@ -8,6 +8,8 @@ import 'firebase_options.dart';
 import 'screens/access_code_screen.dart';
 import 'screens/change_language_screen.dart';
 import 'screens/country_detail_screen.dart';
+import 'screens/document_translate_screen.dart';
+import 'screens/documents_screen.dart';
 import 'screens/language_screen.dart';
 import 'screens/lesson_complete_screen.dart';
 import 'screens/lesson_detail_screen.dart';
@@ -101,6 +103,16 @@ final _router = GoRouter(
       path: '/chat/:chatId',
       builder: (context, state) => ChatScreen(
         chatId: state.pathParameters['chatId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/documents',
+      builder: (context, state) => const DocumentsScreen(),
+    ),
+    GoRoute(
+      path: '/documents/:documentId',
+      builder: (context, state) => DocumentTranslateScreen(
+        documentId: state.pathParameters['documentId']!,
       ),
     ),
   ],

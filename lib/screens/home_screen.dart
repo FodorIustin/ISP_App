@@ -96,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   progress: _progress,
                   loading: _lessonsLoading,
                 ),
+                const _DocumentsCard(),
                 _StatsRow(userService: _userService),
                 _OnlineNowRow(userService: _userService),
                 _AllLessonsSection(
@@ -105,6 +106,50 @@ class _HomeScreenState extends State<HomeScreen> {
                   loading: _lessonsLoading,
                 ),
                 const SizedBox(height: 28),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Documents (translation) ──────────────────────────────────────────────────
+
+class _DocumentsCard extends StatelessWidget {
+  const _DocumentsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Material(
+        color: const Color(0xFF003E6D),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => context.push('/documents'),
+          child: const Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.translate, color: Color(0xFFF9B625), size: 28),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Documents',
+                          style: TextStyle(
+                              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                      SizedBox(height: 3),
+                      Text('Read ISP materials in your language',
+                          style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: Colors.white),
               ],
             ),
           ),

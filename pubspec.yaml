@@ -18,6 +18,11 @@ dependencies:
   flutter_riverpod: ^3.3.1
   go_router: ^17.2.3
   firebase_storage: ^13.4.0
+  # document translation: calls the requestTranslation function (released with
+  # firebase_core 4.8, which this app is locked to; newer needs a Firebase upgrade)
+  cloud_functions: 6.3.0
+  # opens a translated document in the phone's own viewer
+  url_launcher: ^6.3.1
   google_sign_in: ^7.2.0
   image_picker: ^1.2.2
   shared_preferences: ^2.5.5
