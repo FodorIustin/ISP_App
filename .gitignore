@@ -48,4 +48,4 @@ scripts/node_modules/
 scripts/package-lock.json
 functions/node_modules/
 functions/.env
-functions/package-lock.json
+# functions/package-lock.json is committed: the deployed functions get exactly the tested versions
