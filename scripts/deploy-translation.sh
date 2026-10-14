@@ -32,7 +32,8 @@ gcloud run jobs add-iam-policy-binding "$JOB" --region "$REGION" --member "servi
 echo "isp-functions: Firestore + may start job $JOB"
 
 say "function tests"
-(cd functions && npm ci --no-audit --no-fund >/dev/null && npm test 2>&1 | grep -E "^# (tests|pass|fail)")
+# pass/fail is the test runner's exit code (its text format differs between Node versions)
+(cd functions && npm ci --no-audit --no-fund --loglevel=error && npm test --silent)
 
 say "Firebase sign-in"
 if ! npx -y "$FIREBASE_TOOLS" projects:list >/dev/null 2>&1; then
