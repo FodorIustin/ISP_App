@@ -85,14 +85,19 @@ async function runJob(recordId) {
   });
 }
 
-let languagesCache = { at: 0, list: [] };
-async function offeredLanguages() {
-  if (Date.now() - languagesCache.at < 5 * 60 * 1000) return languagesCache.list;
+// config/translation (published by the engine repo), re-read at most every 5 minutes
+let configCache = { at: 0, data: {} };
+async function translationConfig() {
+  if (Date.now() - configCache.at < 5 * 60 * 1000) return configCache.data;
   const snap = await admin.firestore().doc('config/translation').get();
-  const list = (snap.exists && snap.data().languages) || [];
-  languagesCache = { at: Date.now(), list };
-  return list;
+  configCache = { at: Date.now(), data: (snap.exists && snap.data()) || {} };
+  return configCache.data;
 }
+const offeredLanguages = async () => (await translationConfig()).languages || [];
+const dailyJobLimit = async () => {
+  const n = (await translationConfig()).dailyJobLimit;
+  return Number.isInteger(n) && n >= 0 ? n : require('./translation/logic').SETTINGS.dailyJobLimit;
+};
 
 exports.requestTranslation = onCall(
   { region: TRANSLATION.region, serviceAccount: TRANSLATION.serviceAccount, maxInstances: 10 },
@@ -102,6 +107,7 @@ exports.requestTranslation = onCall(
         db: admin.firestore(),
         runJob,
         languages: offeredLanguages,
+        dailyLimit: dailyJobLimit,
         now: () => Date.now() / 1000,
         timestamp: () => admin.firestore.FieldValue.serverTimestamp(),
         log: (...a) => console.log(...a),

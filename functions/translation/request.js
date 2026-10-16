@@ -18,6 +18,7 @@ class RequestError extends Error {
  *   db             Firestore (admin): doc(path).get(), runTransaction(fn)
  *   runJob(rid)    starts the translation job for a record
  *   languages()    [{code, name}] offered (config/translation)
+ *   dailyLimit()   new jobs allowed per day (config/translation.dailyJobLimit, else default)
  *   now()          seconds since 1970
  *   timestamp()    a server timestamp value for the record
  *   log(...)       logging
@@ -39,10 +40,19 @@ async function requestTranslation(uid, data, deps) {
   const ref = deps.db.doc(`translations/${rid}`);
   const now = deps.now();
 
+  const limit = deps.dailyLimit ? await deps.dailyLimit() : L.SETTINGS.dailyJobLimit;
+  const usageRef = deps.db.doc(`usage/${L.usageDay(now)}`);
+
   const result = await deps.db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
+    const usage = await tx.get(usageRef);
     const rec = snap.exists ? snap.data() : null;
     const action = L.decide(rec, now);
+    if (action === 'create' || action === 'restart') {
+      const jobs = (usage.exists && usage.data().jobs) || 0;
+      if (jobs >= limit) return { action: 'limit', status: rec ? rec.status : null };
+      tx.set(usageRef, { jobs: jobs + 1, day: L.usageDay(now) });
+    }
     if (action === 'create') {
       tx.set(ref, { ...L.newRecord({ documentId, lang, doc, uid, now }),
         requestedAt: deps.timestamp() });
@@ -60,6 +70,11 @@ async function requestTranslation(uid, data, deps) {
     return { action, status: update.status || rec.status };
   });
 
+  if (result.action === 'limit') {
+    deps.log(`translation ${rid}: daily limit of ${limit} new jobs reached`);
+    throw new RequestError('resource-exhausted',
+      'The daily translation limit has been reached. Please try again tomorrow.');
+  }
   if (result.action === 'create' || result.action === 'restart') {
     try {
       await deps.runJob(rid);

@@ -143,3 +143,20 @@ test('requests that must be refused', async () => {
   assert.equal(await code('u1', { documentId: 'odd', lang: 'ro' }), 'failed-precondition');
   assert.equal(await code('u1', {}), 'invalid-argument');
 });
+
+test('daily limit: new jobs stop at the limit; cached results are always served', async () => {
+  const day = L.usageDay(1000);
+  const db = fakeDb({ 'documents/bfc1': DOC, [`usage/${day}`]: { jobs: 2 },
+    'translations/bfc1__de': { status: 'ready', requesters: ['u1'] } });
+  const d = deps(db, { dailyLimit: async () => 3 });
+  await requestTranslation('u1', { documentId: 'bfc1', lang: 'ro' }, d);       // job 3 of 3
+  assert.equal(db.data[`usage/${day}`].jobs, 3);
+  db.data[REC] = undefined; delete db.data[REC];
+  const d2 = deps(db, { dailyLimit: async () => 3 });
+  await assert.rejects(requestTranslation('u2', { documentId: 'bfc1', lang: 'ro' }, d2),
+    (e) => e.code === 'resource-exhausted');
+  assert.deepEqual(d2.started, []);
+  const out = await requestTranslation('u2', { documentId: 'bfc1', lang: 'de' }, d2);
+  assert.equal(out.action, 'served');                                       // cache: no limit
+  assert.equal(db.data[`usage/${day}`].jobs, 3);
+});

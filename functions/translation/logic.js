@@ -11,6 +11,10 @@
 'use strict';
 
 const SETTINGS = {
+  // New translation jobs per day (UTC), all users together: a safety net on API spend.
+  // config/translation.dailyJobLimit overrides it (deploy/publish-config.sh in the engine
+  // repo); restarts of a lost job count too, served-from-cache requests do not.
+  dailyJobLimit: 40,
   // A job that was asked to start but has not taken the record yet. Cloud Run needs ~3
   // min to start an execution (measured 2026-10-14); after this the start counts as lost
   // and the next request starts it again.
@@ -95,4 +99,9 @@ function newRecord({ documentId, lang, doc, uid, now }) {
   };
 }
 
-module.exports = { SETTINGS, FINISHED, recordId, checkRequest, checkDocument, decide, newRecord };
+/** The usage counter document for a moment (seconds since 1970): usage/YYYY-MM-DD. */
+function usageDay(now) {
+  return new Date(now * 1000).toISOString().slice(0, 10);
+}
+
+module.exports = { usageDay, SETTINGS, FINISHED, recordId, checkRequest, checkDocument, decide, newRecord };
